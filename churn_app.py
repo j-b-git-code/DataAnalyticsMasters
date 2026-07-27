@@ -6,6 +6,11 @@ st.set_page_config(page_title="Healthy Meals Churn Predictor", page_icon="📉")
 
 model = joblib.load("churn_model.pkl")
 
+# The pickled object may be the GridSearchCV wrapper itself (which has no .named_steps,
+# only its .best_estimator_ does) rather than the bare fitted Pipeline -- handle both
+# so this works regardless of which one got saved.
+pipeline = model.best_estimator_ if hasattr(model, "best_estimator_") else model
+
 numeric_features = ['total_num_sessions', 'gross_session_length', 'active_days',
                      'active_quarters', 'avg_sessions_per_active_quarter',
                      'avg_session_length', 'sessions_per_active_day',
@@ -14,7 +19,7 @@ categorical_features = ['education', 'income_level', 'device_type']
 
 # Pull the exact categories the encoder was fitted on -- guarantees the dropdown
 # options match training exactly, no hardcoded strings to get wrong.
-cat_encoder = model.named_steps['preprocess'].named_transformers_['cat']
+cat_encoder = pipeline.named_steps['preprocess'].named_transformers_['cat']
 cat_options = dict(zip(categorical_features, cat_encoder.categories_))
 
 st.title("Healthy Meals — Churn Probability Predictor")
